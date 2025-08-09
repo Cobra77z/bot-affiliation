@@ -164,10 +164,8 @@ async def button(update, context):
 
 # --- Lancer l'application ---
 if __name__ == "__main__":
-    TOKEN = os.environ.get("
-          8274151273:AAGLzb8UVZn7Jqd-49P8CG3CxSMFvlhGcTI
-        ")
-    PUBLIC_URL = os.environ.get("PUBLIC_URL")
+    TOKEN = os.environ.get("8274151273:AAGLzb8UVZn7Jqd-49P8CG3CxSMFvlhGcTI")
+    PUBLIC_URL = os.environ.get("https://bot-affiliation.onrender.com")
 
     application = Application.builder().token(TOKEN).build()
     bot = application.bot
