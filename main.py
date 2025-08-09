@@ -1,179 +1,177 @@
 import os
 from flask import Flask, request
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Application, CommandHandler, ContextTypes, CallbackQueryHandler
 
-# --- Données des plateformes ---
-plateformes = {
-    "BoursoBank": {
-        "lien": "https://www.boursobank.com/affiliation",
-        "tuto": [
-            "1️⃣ Rendez-vous sur le lien ci-dessus.",
-            "2️⃣ Créez un compte.",
-            "3️⃣ Copiez votre lien partenaire."
-        ]
-    },
-    "Revolut": {
-        "lien": "https://www.revolut.com/referral",
-        "tuto": [
-            "1️⃣ Ouvrez le lien.",
-            "2️⃣ Créez un compte Revolut.",
-            "3️⃣ Activez votre carte pour valider."
-        ]
-    },
-    "HelloBank": {
-        "lien": "https://www.hellobank.fr/affiliation",
-        "tuto": [
-            "1️⃣ Cliquez sur le lien.",
-            "2️⃣ Remplissez vos infos.",
-            "3️⃣ Recevez votre prime."
-        ]
-    },
-    "BankIn": {
-        "lien": "https://www.bankin.com/affiliation",
-        "tuto": [
-            "1️⃣ Inscrivez-vous via le lien.",
-            "2️⃣ Connectez vos comptes.",
-            "3️⃣ Profitez de vos avantages."
-        ]
-    },
-    "PayPal": {
-        "lien": "https://www.paypal.com/referral",
-        "tuto": [
-            "1️⃣ Connectez-vous à PayPal.",
-            "2️⃣ Invitez un ami via le lien.",
-            "3️⃣ Recevez votre prime."
-        ]
-    },
-    "Crédit Agricole": {
-        "lien": "https://www.credit-agricole.fr/affiliation",
-        "tuto": [
-            "1️⃣ Ouvrez le lien.",
-            "2️⃣ Choisissez votre agence.",
-            "3️⃣ Remplissez le formulaire."
-        ]
-    },
-    "Crédit Lyonnais": {
-        "lien": "https://www.lcl.fr/affiliation",
-        "tuto": [
-            "1️⃣ Accédez au lien.",
-            "2️⃣ Créez un compte.",
-            "3️⃣ Recevez votre prime."
-        ]
-    },
-    "Société Générale": {
-        "lien": "https://particuliers.societegenerale.fr/affiliation",
-        "tuto": [
-            "1️⃣ Cliquez sur le lien.",
-            "2️⃣ Ouvrez un compte.",
-            "3️⃣ Recevez vos avantages."
-        ]
-    },
-    "BforBank": {
-        "lien": "https://www.bforbank.com/affiliation",
-        "tuto": [
-            "1️⃣ Suivez le lien.",
-            "2️⃣ Remplissez vos infos.",
-            "3️⃣ Validez pour la prime."
-        ]
-    },
-    "N26": {
-        "lien": "https://n26.com/referral",
-        "tuto": [
-            "1️⃣ Ouvrez un compte via le lien.",
-            "2️⃣ Commandez votre carte.",
-            "3️⃣ Utilisez-la pour activer la prime."
-        ]
-    },
-    "Fortuneo": {
-        "lien": "https://www.fortuneo.fr/affiliation",
-        "tuto": [
-            "1️⃣ Cliquez sur le lien.",
-            "2️⃣ Créez un compte.",
-            "3️⃣ Profitez de vos avantages."
-        ]
-    },
-    "CoinBase": {
-        "lien": "https://www.coinbase.com/join",
-        "tuto": [
-            "1️⃣ Ouvrez le lien.",
-            "2️⃣ Créez un compte.",
-            "3️⃣ Achetez pour activer la prime."
-        ]
-    },
-    "Kraken": {
-        "lien": "https://kraken.com/referral",
-        "tuto": [
-            "1️⃣ Cliquez sur le lien.",
-            "2️⃣ Créez un compte.",
-            "3️⃣ Commencez à trader."
-        ]
-    },
-    "Deblock": {
-        "lien": "https://www.deblock.com/affiliation",
-        "tuto": [
-            "1️⃣ Inscrivez-vous via le lien.",
-            "2️⃣ Vérifiez votre identité.",
-            "3️⃣ Recevez la prime."
-        ]
-    },
-    "Robinhood": {
-        "lien": "https://robinhood.com/referral",
-        "tuto": [
-            "1️⃣ Ouvrez un compte via le lien.",
-            "2️⃣ Déposez des fonds.",
-            "3️⃣ Recevez une action gratuite."
-        ]
-    }
-}
+# Variables d'environnement
+BOT_TOKEN = os.getenv("8274151273:AAGLzb8UVZn7Jqd-49P8CG3CxSMFvlhGcTI")
+PUBLIC_URL = os.getenv("https://bot-affiliation.onrender.com")
 
-# --- Flask app pour Render ---
+if not BOT_TOKEN or not PUBLIC_URL:
+    raise ValueError("⚠️ BOT_TOKEN et PUBLIC_URL doivent être définis dans Render Environment Variables")
+
+# Flask app
 app = Flask(__name__)
 
-@app.route('/')
-def index():
-    return "Bot Telegram Affiliation est actif 🚀"
+# Plateformes et tutoriels détaillés
+platforms = {
+    "BoursoBank": (
+        "https://bourso.com/affiliation",
+        "📋 **Tuto BoursoBank :**\n"
+        "1️⃣ Clique sur le lien ci-dessus.\n"
+        "2️⃣ Remplis le formulaire d'ouverture de compte.\n"
+        "3️⃣ Fournis tes justificatifs d'identité et de domicile.\n"
+        "4️⃣ Effectue un premier versement (montant minimum indiqué sur le site).\n"
+        "5️⃣ Ta prime sera créditée après validation du compte."
+    ),
+    "Revolut": (
+        "https://revolut.com/referral",
+        "📋 **Tuto Revolut :**\n"
+        "1️⃣ Ouvre le lien et télécharge l'application.\n"
+        "2️⃣ Crée ton compte et valide ton identité.\n"
+        "3️⃣ Commande ta carte bancaire gratuite.\n"
+        "4️⃣ Effectue un paiement avec ta carte.\n"
+        "5️⃣ Prime reçue sous 24h."
+    ),
+    "HelloBank": (
+        "https://hellobank.fr/parrainage",
+        "📋 **Tuto HelloBank :**\n"
+        "1️⃣ Clique sur le lien.\n"
+        "2️⃣ Remplis le formulaire d'inscription.\n"
+        "3️⃣ Envoie tes justificatifs.\n"
+        "4️⃣ Effectue un premier versement.\n"
+        "5️⃣ Prime créditée après validation."
+    ),
+    "BankIn": (
+        "https://bankin.com/parrainage",
+        "📋 **Tuto BankIn :**\n"
+        "1️⃣ Télécharge l'application via le lien.\n"
+        "2️⃣ Crée ton compte.\n"
+        "3️⃣ Connecte au moins un compte bancaire.\n"
+        "4️⃣ Profite des fonctionnalités premium offertes."
+    ),
+    "PayPal": (
+        "https://paypal.com/referral",
+        "📋 **Tuto PayPal :**\n"
+        "1️⃣ Connecte-toi ou crée un compte via le lien.\n"
+        "2️⃣ Ajoute un compte bancaire ou une carte.\n"
+        "3️⃣ Envoie ou reçois de l'argent pour activer la prime."
+    ),
+    "Crédit Agricole": (
+        "https://credit-agricole.fr/offre",
+        "📋 **Tuto Crédit Agricole :**\n"
+        "1️⃣ Clique sur le lien et choisis ton agence.\n"
+        "2️⃣ Ouvre un compte en ligne.\n"
+        "3️⃣ Dépose le montant minimum requis.\n"
+        "4️⃣ Reçois ta prime."
+    ),
+    "Crédit Lyonnais": (
+        "https://lcl.fr/parrainage",
+        "📋 **Tuto LCL :**\n"
+        "1️⃣ Ouvre le lien et remplis le formulaire.\n"
+        "2️⃣ Fournis tes justificatifs.\n"
+        "3️⃣ Effectue ton premier versement.\n"
+        "4️⃣ Prime créditée sous quelques jours."
+    ),
+    "Société Générale": (
+        "https://societegenerale.fr/parrainage",
+        "📋 **Tuto Société Générale :**\n"
+        "1️⃣ Clique sur le lien et choisis ton offre.\n"
+        "2️⃣ Ouvre ton compte.\n"
+        "3️⃣ Fournis les pièces justificatives.\n"
+        "4️⃣ Prime versée après validation."
+    ),
+    "BforBank": (
+        "https://bforbank.com/parrainage",
+        "📋 **Tuto BforBank :**\n"
+        "1️⃣ Ouvre le lien.\n"
+        "2️⃣ Crée un compte avec tes informations.\n"
+        "3️⃣ Envoie tes justificatifs.\n"
+        "4️⃣ Effectue un dépôt initial.\n"
+        "5️⃣ Prime versée après activation."
+    ),
+    "N26": (
+        "https://n26.com/referral",
+        "📋 **Tuto N26 :**\n"
+        "1️⃣ Clique sur le lien et télécharge l'application.\n"
+        "2️⃣ Crée un compte et valide ton identité.\n"
+        "3️⃣ Commande ta carte.\n"
+        "4️⃣ Effectue un paiement pour déclencher la prime."
+    ),
+    "Fortuneo": (
+        "https://fortuneo.fr/parrainage",
+        "📋 **Tuto Fortuneo :**\n"
+        "1️⃣ Ouvre le lien et choisis ton type de compte.\n"
+        "2️⃣ Remplis le formulaire d'inscription.\n"
+        "3️⃣ Envoie tes justificatifs.\n"
+        "4️⃣ Prime versée après dépôt initial."
+    ),
+    "CoinBase": (
+        "https://coinbase.com/join",
+        "📋 **Tuto Coinbase :**\n"
+        "1️⃣ Inscris-toi via le lien.\n"
+        "2️⃣ Vérifie ton identité.\n"
+        "3️⃣ Achète ou vends l'équivalent de 100€ en crypto.\n"
+        "4️⃣ Prime créditée automatiquement."
+    ),
+    "Kraken": (
+        "https://kraken.com/referral",
+        "📋 **Tuto Kraken :**\n"
+        "1️⃣ Clique sur le lien.\n"
+        "2️⃣ Crée un compte et valide ton identité.\n"
+        "3️⃣ Dépose un montant minimum.\n"
+        "4️⃣ Prime versée après ton premier trade."
+    ),
+    "Deblock": (
+        "https://deblock.com/parrainage",
+        "📋 **Tuto Deblock :**\n"
+        "1️⃣ Ouvre le lien.\n"
+        "2️⃣ Crée un compte et valide ton email.\n"
+        "3️⃣ Active ton profil.\n"
+        "4️⃣ Prime reçue après ton premier transfert."
+    ),
+    "Robinhood": (
+        "https://robinhood.com/referral",
+        "📋 **Tuto Robinhood :**\n"
+        "1️⃣ Ouvre le lien.\n"
+        "2️⃣ Crée un compte.\n"
+        "3️⃣ Dépose des fonds.\n"
+        "4️⃣ Reçois des actions gratuites."
+    )
+}
 
-@app.route('/webhook', methods=['POST'])
-def webhook():
-    update = Update.de_json(request.get_json(force=True), bot)
-    application.update_queue.put_nowait(update)
-    return "OK"
+# Bot
+application = Application.builder().token(BOT_TOKEN).build()
 
-# --- Fonctions du bot ---
-async def start(update, context):
-    keyboard = []
-    row = []
-    for i, name in enumerate(plateformes.keys(), start=1):
-        row.append(InlineKeyboardButton(name, callback_data=name))
-        if i % 2 == 0:
-            keyboard.append(row)
-            row = []
-    if row:
-        keyboard.append(row)
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    keyboard = [[InlineKeyboardButton(name, callback_data=name)] for name in platforms.keys()]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text("💳 Choisissez la plateforme :", reply_markup=reply_markup)
+    await update.message.reply_text("👋 Bienvenue ! Choisis une plateforme pour voir le lien et le tutoriel :", reply_markup=reply_markup)
 
-async def button(update, context):
+async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    plateforme = plateformes[query.data]
-    message = f"**{query.data}**\n\n🔗 Lien : {plateforme['lien']}\n\n📋 Tutoriel :\n"
-    message += "\n".join(plateforme["tuto"])
-    await query.edit_message_text(text=message, parse_mode="Markdown")
+    name = query.data
+    link, tuto = platforms[name]
+    await query.edit_message_text(f"🔗 **Lien :** {link}\n\n{tuto}", parse_mode="Markdown")
 
-# --- Lancer l'application ---
+application.add_handler(CommandHandler("start", start))
+application.add_handler(CallbackQueryHandler(button_click))
+
+@app.route(f"/{BOT_TOKEN}", methods=["POST"])
+def webhook():
+    update = Update.de_json(request.get_json(force=True), application.bot)
+    application.update_queue.put(update)
+    return "OK", 200
+
+@app.route("/", methods=["GET"])
+def home():
+    return "Bot is running!", 200
+
+@app.before_first_request
+def set_webhook():
+    webhook_url = f"{PUBLIC_URL}/{BOT_TOKEN}"
+    application.bot.set_webhook(url=webhook_url)
+
 if __name__ == "__main__":
-    TOKEN = os.environ.get("8274151273:AAGLzb8UVZn7Jqd-49P8CG3CxSMFvlhGcTI")
-    PUBLIC_URL = os.environ.get("https://bot-affiliation.onrender.com")
-
-    application = Application.builder().token(TOKEN).build()
-    bot = application.bot
-
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CallbackQueryHandler(button))
-
-    if PUBLIC_URL:
-        bot.set_webhook(f"{PUBLIC_URL}/webhook")
-
-    application.run_polling()
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
